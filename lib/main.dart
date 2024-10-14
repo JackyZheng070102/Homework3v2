@@ -98,20 +98,26 @@ class CardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 300), // Animation duration of 300ms
       decoration: BoxDecoration(
         color: isFaceUp ? Colors.red : Colors.blue, // Red if face-up, blue if face-down
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Center(
-        child: Text(
-          isFaceUp ? 'Card $index' : '', // Show card index if face-up (use real design later)
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
+        child: AnimatedOpacity(
+          duration: Duration(milliseconds: 300),
+          opacity: isFaceUp ? 1.0 : 0.0, // Fade in the content if face-up
+          child: Text(
+            'Card $index', // Placeholder text, replace with actual design later
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+            ),
           ),
         ),
       ),
+      margin: EdgeInsets.all(4.0),
     );
   }
 }
