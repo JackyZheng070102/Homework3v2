@@ -32,11 +32,20 @@ class _GameScreenState extends State<GameScreen> {
   List<int> cardValues = List<int>.generate(16, (index) => index ~/ 2); // Creates pairs: 0-0, 1-1, ..., 7-7
 
   int matchedPairs = 0; // Tracks number of matched pairs
+  int score = 0; // Player's score
+  int timeTaken = 0; // Time taken to match pairs
+  Timer? timer; // Timer object
+  bool gameStarted = false; // Flag to check if game has started
 
   // Handle card flipping logic
   void flipCard(int index) {
     if (isFaceUp[index] || isMatched[index] || selectedCards.length == 2) {
       return; // Prevent flipping if card is already face-up, matched, or two cards are face-up
+    }
+
+    if (!gameStarted) {
+      startTimer(); // Start the timer when the first card is flipped
+      gameStarted = true;
     }
 
     setState(() {
@@ -53,30 +62,48 @@ class _GameScreenState extends State<GameScreen> {
             isMatched[selectedCards[0]] = true;
             isMatched[selectedCards[1]] = true;
             matchedPairs++; // Increment matched pairs counter
+            score += 10; // Earn points for a match
           } else {
             // Cards do not match, flip them back down
             isFaceUp[selectedCards[0]] = false;
             isFaceUp[selectedCards[1]] = false;
+            score -= 5; // Deduct points for a mismatch
           }
           selectedCards.clear(); // Clear selected cards after checking
         });
 
         // Check for victory condition
         if (matchedPairs == cardValues.length ~/ 2) {
+          stopTimer(); // Stop the timer when the game is won
           _showVictoryDialog(); // Display victory message
         }
       });
     }
   }
 
+  // Start the timer
+  void startTimer() {
+    timer = Timer.periodic(Duration(seconds: 1), (Timer t) {
+      setState(() {
+        timeTaken++; // Increment time taken each second
+      });
+    });
+  }
+
+  // Stop the timer
+  void stopTimer() {
+    timer?.cancel();
+  }
+
   // Show victory dialog
   void _showVictoryDialog() {
+    stopTimer(); // Ensure timer is stopped before showing the dialog
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Victory!'),
-          content: Text('You matched all pairs!'),
+          content: Text('You matched all pairs!\nTime: $timeTaken seconds\nScore: $score'),
           actions: <Widget>[
             TextButton(
               child: Text('Play Again'),
@@ -98,6 +125,9 @@ class _GameScreenState extends State<GameScreen> {
       isMatched = List<bool>.filled(16, false);
       selectedCards.clear();
       matchedPairs = 0;
+      score = 0;
+      timeTaken = 0;
+      gameStarted = false;
       cardValues.shuffle(); // Shuffle the card values for a new game
     });
   }
@@ -108,28 +138,44 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: Text('Card Matching Game'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4, // 4x4 grid
-            crossAxisSpacing: 8.0,
-            mainAxisSpacing: 8.0,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Score: $score', style: TextStyle(fontSize: 20)),
+                Text('Time: $timeTaken seconds', style: TextStyle(fontSize: 20)),
+              ],
+            ),
           ),
-          itemCount: isFaceUp.length,
-          itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () {
-                flipCard(index); // Flip card on tap
-              },
-              child: CardWidget(
-                index: index,
-                isFaceUp: isFaceUp[index], // Pass card state to the widget
-                isMatched: isMatched[index], // Pass matched state to the widget
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4, // 4x4 grid
+                  crossAxisSpacing: 8.0,
+                  mainAxisSpacing: 8.0,
+                ),
+                itemCount: isFaceUp.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      flipCard(index); // Flip card on tap
+                    },
+                    child: CardWidget(
+                      index: index,
+                      isFaceUp: isFaceUp[index], // Pass card state to the widget
+                      isMatched: isMatched[index], // Pass matched state to the widget
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
