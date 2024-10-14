@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:math';
 
 void main() {
   runApp(CardMatchingGame());
@@ -28,14 +29,19 @@ class _GameScreenState extends State<GameScreen> {
   List<bool> isMatched = List<bool>.filled(16, false); // Tracks whether a card is matched
   List<int> selectedCards = []; // Stores indices of currently face-up cards
   
-  // Mock data for card matching (8 pairs of cards with values 0-7)
-  List<int> cardValues = List<int>.generate(16, (index) => index ~/ 2); // Creates pairs: 0-0, 1-1, ..., 7-7
+  // Create pairs of card values (8 pairs)
+  List<int> cardValues = List<int>.generate(8, (index) => index)..addAll(List<int>.generate(8, (index) => index));
 
   int matchedPairs = 0; // Tracks number of matched pairs
   int score = 0; // Player's score
   int timeTaken = 0; // Time taken to match pairs
   Timer? timer; // Timer object
   bool gameStarted = false; // Flag to check if game has started
+
+  // Shuffle the card values for a new game
+  void shuffleCards() {
+    cardValues.shuffle(Random()); // Shuffle the card values using the default random generator
+  }
 
   // Handle card flipping logic
   void flipCard(int index) {
@@ -128,7 +134,7 @@ class _GameScreenState extends State<GameScreen> {
       score = 0;
       timeTaken = 0;
       gameStarted = false;
-      cardValues.shuffle(); // Shuffle the card values for a new game
+      shuffleCards(); // Shuffle the card values for a new game
     });
   }
 
@@ -169,6 +175,7 @@ class _GameScreenState extends State<GameScreen> {
                       index: index,
                       isFaceUp: isFaceUp[index], // Pass card state to the widget
                       isMatched: isMatched[index], // Pass matched state to the widget
+                      cardValue: cardValues[index], // Pass the actual card value to the widget
                     ),
                   );
                 },
@@ -185,8 +192,15 @@ class CardWidget extends StatelessWidget {
   final int index;
   final bool isFaceUp;
   final bool isMatched;
+  final int cardValue; // Card value to display
 
-  const CardWidget({Key? key, required this.index, required this.isFaceUp, required this.isMatched}) : super(key: key);
+  const CardWidget({
+    Key? key,
+    required this.index,
+    required this.isFaceUp,
+    required this.isMatched,
+    required this.cardValue,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +215,7 @@ class CardWidget extends StatelessWidget {
           duration: Duration(milliseconds: 300),
           opacity: isFaceUp || isMatched ? 1.0 : 0.0, // Fade in content if face-up or matched
           child: Text(
-            isFaceUp || isMatched ? 'Card ${index ~/ 2}' : '', // Show card value for pairs
+            isFaceUp || isMatched ? cardValue.toString() : '', // Show card value for pairs
             style: TextStyle(
               color: Colors.white,
               fontSize: 18,
